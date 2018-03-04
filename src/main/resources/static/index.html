@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+</head>
+<body>
+<!--
+
+<div th:if="${message}">
+    <h2 th:text="${message}"/>
+</div>
+-->
+<div class="container">
+    <form id="uploadFileForm" method="POST" enctype="multipart/form-data">
+        <table>
+            <tr>
+                <td colspan="2">
+                    <span class="h2">Upload files to find torpedos and starships in the input files</span>
+                    <br>
+                </td>
+            </tr>
+            <tr>
+                <td>Input data:</td>
+                <td><input type="file" name="input" accept=".blf"/></td>
+            </tr>
+            <tr>
+                <td>torpedo:</td>
+                <td><input type="file" name="torpedo" accept=".blf"/></td>
+            </tr>
+            <tr>
+                <td>Starship:</td>
+                <td><input type="file" name="starship" accept=".blf"/></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><input type="button" onclick="uploadFile()" value="Upload"/></td>
+            </tr>
+        </table>
+    </form>
+    <div class="container">
+
+        <div class="row">
+            <div class="col">
+                <span id="message"></span>
+            </div>
+            <div class="col">
+                <h1>input</h1>
+                <canvas id="inputCanvas" style="border:1px solid #d3d3d3;"></canvas>
+            </div>
+
+            <div class="col">
+                <h1>torpedo</h1>
+                <canvas id="torpedo" style="border:1px solid #d3d3d3;"></canvas>
+            </div>
+
+            <div class="col">
+                <h1>starship</h1>
+                <canvas id="starship" style="border:1px solid #d3d3d3;"></canvas>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+
+</body>
+<script>
+
+
+$(document).on({
+    ajaxStart: function() { $('#message').html("uploading..");    },
+     ajaxStop: function() { $('#message').html(""); }
+});
+
+
+/**
+ * Upload the file sending it via Ajax at the Spring Boot server.
+ */
+function uploadFile() {
+  $.ajax({
+    url: "/findPattern",
+    type: "POST",
+    data: new FormData($("#uploadFileForm")[0]),
+    enctype: 'multipart/form-data',
+    processData: false,
+    contentType: false,
+    cache: false,
+    success: function (data) {
+      console.log(data);
+      var input=data.input;
+
+      var c=document.getElementById("inputCanvas");
+      c.height = input.length * 12;
+	  c.width = input[0].length * 12;
+
+      var torpedoCanvas=document.getElementById("torpedo");
+      torpedoCanvas.height = data.torpedo.length * 15;
+	  torpedoCanvas.width = data.torpedo[0].length * 15;
+
+      var starshipCanvas=document.getElementById("starship");
+      starshipCanvas.height = data.starship.length * 15;
+	  starshipCanvas.width = data.torpedo[0].length * 15;
+
+
+      for(var i=0; i<data.torpedo.length;i++){
+          var col=data.torpedo[i];
+              for(var j=0; j<col.length;j++){
+                 if(col[j]=='+'){
+                        createSquare(torpedoCanvas,i+1,j+1,"black");
+                 }
+                 else {
+                     createSquare(torpedoCanvas,i+1,j+1,"white");
+                  }
+              }
+      }
+
+
+
+      for(var i=0; i<data.starship.length;i++){
+          var col=data.starship[i];
+              for(var j=0; j<col.length;j++){
+                 if(col[j]=='+'){
+                        createSquare(starshipCanvas,i+1,j+1,"black");
+                 }
+                 else {
+                     createSquare(starshipCanvas,i+1,j+1,"white");
+                  }
+              }
+      }
+
+
+      <!--console.log(input.length);-->
+
+      for(var i=0; i<input.length;i++){
+          var col=input[i];
+              for(var j=0; j<col.length;j++){
+                 if(col[j]=='+'){
+                        createSquare(c,i+1,j+1,"black");
+                 }
+                 else {
+                     createSquare(c,i+1,j+1,"white");
+                  }
+              }
+      }
+
+         var found=data.found;
+
+         console.log(found);
+
+         var foundColor="rgba(255, 255, 102,0.60)";
+
+         for(var i=0;i<found.length;i++)
+            createSquare(c,found[i].x+1,found[i].y+1,foundColor);
+
+      },
+    error: function () {
+    }
+  });
+} // function uploadFile
+
+function createSquare(canvas,x,y,color){
+    var ctx=canvas.getContext("2d");
+    ctx.fillStyle=color;
+    ctx.fillRect(y*10 + 1,x*10 + 1,10,10);
+}
+
+
+</script>
+</html>
