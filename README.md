@@ -16,3 +16,4 @@ mvn spring-boot:run
 ```
 java -jar bliffoscope-0.0.1-SNAPSHOT.jar
 ```
+4. go to url  http://localhost:8080
